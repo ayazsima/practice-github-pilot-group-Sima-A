@@ -1,60 +1,78 @@
 package com.example.classmanager.controller;
 
-import com.example.classmanager.model.Teacher;
+import com.example.classmanager.model.Student;
 import com.example.classmanager.repository.StudentRepository;
-import com.example.classmanager.repository.TeacherRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/teachers")
+@RequestMapping("/students")
 public class StudentController {
 
-    @Autowired
-    TeacherRepository teacherRepository;
+    private final StudentRepository studentRepository;
+
+    public StudentController(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
+    }
 
     @GetMapping
-    public ResponseEntity<List<Teacher>> getTeachers() {
-        return ResponseEntity.ok(teacherRepository.findAll());
+    public ResponseEntity<List<Student>> getAllStudents() {
+        return ResponseEntity.ok(studentRepository.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Teacher> getTeacherById(@PathVariable Long id) {
-        return teacherRepository.findById(id)
+    public ResponseEntity<Student> getStudentById(
+            @PathVariable("id") Long id) {
+
+        return studentRepository.findById(id)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Teacher> createTeacher(@RequestBody Teacher teacher) {
-        Teacher savedTeacher = teacherRepository.save(teacher);
-        return ResponseEntity.ok(savedTeacher);
+    public ResponseEntity<Student> createStudent(
+            @RequestBody Student student) {
+
+        student.setId(null);
+
+        Student savedStudent = studentRepository.save(student);
+
+        URI location = URI.create("/students/" + savedStudent.getId());
+
+        return ResponseEntity.created(location).body(savedStudent);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Teacher> updateTeacher(@PathVariable Long id, @RequestBody   Teacher teacherDetails) {
-        return teacherRepository.findById(id)
-                .map(teacher -> {
-                    teacher.setFirstName(teacherDetails.getFirstName());
-                    teacher.setLastName(teacherDetails.getLastName());
-                    teacher.setEmail(teacherDetails.getEmail());
-                    Teacher updatedTeacher = teacherRepository.save(teacher);
-                    return ResponseEntity.ok(updatedTeacher);
+    public ResponseEntity<Student> updateStudent(
+            @PathVariable("id") Long id,
+            @RequestBody Student studentDetails) {
+
+        return studentRepository.findById(id)
+                .map(student -> {
+                    student.setFirstName(studentDetails.getFirstName());
+                    student.setLastName(studentDetails.getLastName());
+                    student.setEmail(studentDetails.getEmail());
+
+                    Student updatedStudent = studentRepository.save(student);
+
+                    return ResponseEntity.ok(updatedStudent);
                 })
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTeacher(@PathVariable Long id) {
-        return teacherRepository.findById(id)
-                .map(teacher -> {
-                    teacherRepository.delete(teacher);
+    public ResponseEntity<Void> deleteStudent(
+            @PathVariable("id") Long id) {
+
+        return studentRepository.findById(id)
+                .map(student -> {
+                    studentRepository.delete(student);
+
                     return ResponseEntity.noContent().<Void>build();
                 })
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
-
 }
